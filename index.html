@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Nearby Recommender</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: white;
+  text-align: center;
+}
+
+h1 {
+  margin: 20px 0;
+}
+
+.controls {
+  margin: 20px;
+}
+
+select, button {
+  padding: 10px;
+  margin: 5px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+}
+
+button {
+  background: #22c55e;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #16a34a;
+}
+
+#map {
+  width: 90%;
+  height: 350px;
+  margin: auto;
+  border-radius: 12px;
+}
+
+.results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 15px;
+  padding: 20px;
+}
+
+.card {
+  background: #1e293b;
+  padding: 15px;
+  border-radius: 12px;
+  transition: 0.3s;
+}
+
+.card:hover {
+  transform: scale(1.05);
+}
+
+img {
+  width: 100%;
+  border-radius: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>📍 Smart Nearby Recommender</h1>
+
+<div class="controls">
+  <select id="type">
+    <option value="restaurant">🍽 Date</option>
+    <option value="cafe">💻 Work</option>
+    <option value="bar">🍹 Chill</option>
+  </select>
+
+  <button onclick="findPlaces()">Find Places</button>
+</div>
+
+<div id="map"></div>
+
+<div class="results" id="results"></div>
+
+<script>
+let map;
+let service;
+
+function findPlaces() {
+  navigator.geolocation.getCurrentPosition((position) => {
+
+    const userLocation = {
+      lat: position.coords.latitude,
+      lng: position.coords.longitude
+    };
+
+    map = new google.maps.Map(document.getElementById("map"), {
+      center: userLocation,
+      zoom: 14,
+    });
+
+    service = new google.maps.places.PlacesService(map);
+
+    const request = {
+      location: userLocation,
+      radius: 2000,
+      type: [document.getElementById("type").value],
+    };
+
+    service.nearbySearch(request, (results, status) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK) {
+        showResults(results);
+      }
+    });
+  });
+}
+
+function showResults(places) {
+  const resultsDiv = document.getElementById("results");
+  resultsDiv.innerHTML = "";
+
+  places.forEach(place => {
+
+    const photo = place.photos
+      ? place.photos[0].getUrl({ maxWidth: 400 })
+      : "https://via.placeholder.com/400";
+
+    const card = `
+      <div class="card">
+        <img src="${photo}" />
+        <h3>${place.name}</h3>
+        <p>⭐ ${place.rating || "No rating"}</p>
+        <p>${place.vicinity}</p>
+        <p>${place.opening_hours?.open_now ? "🟢 Open" : "🔴 Closed"}</p>
+      </div>
+    `;
+
+    resultsDiv.innerHTML += card;
+
+    new google.maps.Marker({
+      map: map,
+      position: place.geometry.location
+    });
+  });
+}
+</script>
+
+<!-- 🚫 DO NOT PUT REAL API KEY HERE WHEN UPLOADING -->
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places"></script>
+
+</body>
+</html>
